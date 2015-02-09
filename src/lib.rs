@@ -59,7 +59,6 @@ pub fn compile_library(output: &str, config: &Config, files: &[&str]) {
     let mut cmd = Command::new(gcc(target.as_slice()));
     cmd.arg(format!("-O{}", opt_level));
     cmd.arg("-c");
-    cmd.arg("-ffunction-sections").arg("-fdata-sections");
     cmd.args(cflags().as_slice());
 
     if target.as_slice().contains("-ios") {
