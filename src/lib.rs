@@ -75,7 +75,7 @@ pub fn compile_library(output: &str, config: &Config, files: &[&str]) {
         }
 
         if !target.as_slice().contains("i686") {
-            cmd.arg("-fPIC");
+            // cmd.arg("-fPIC");
         }
     }
 
