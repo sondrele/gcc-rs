@@ -42,7 +42,9 @@
 //! }
 //! ```
 
-#![feature(old_io, io, path, env, collections, process, fs)]
+#![doc(html_root_url = "http://alexcrichton.com/gcc-rs")]
+#![feature(std_misc)]
+#![cfg_attr(test, deny(warnings))]
 
 use std::env;
 use std::fs;
@@ -108,7 +110,7 @@ impl Config {
     }
 
     /// Add a directory to the `-I` or include path for headers
-    pub fn include<P: AsPath + ?Sized>(&mut self, dir: &P) -> &mut Config {
+    pub fn include<P: AsPath>(&mut self, dir: P) -> &mut Config {
         self.include_directories.push(dir.as_path().to_path_buf());
         self
     }
@@ -120,7 +122,7 @@ impl Config {
     }
 
     /// Add an arbitrary object file to link in
-    pub fn object<P: AsPath + ?Sized>(&mut self, obj: &P) -> &mut Config {
+    pub fn object<P: AsPath>(&mut self, obj: P) -> &mut Config {
         self.objects.push(obj.as_path().to_path_buf());
         self
     }
@@ -132,7 +134,7 @@ impl Config {
     }
 
     /// Add a file which will be compiled
-    pub fn file<P: AsPath + ?Sized>(&mut self, p: &P) -> &mut Config {
+    pub fn file<P: AsPath>(&mut self, p: P) -> &mut Config {
         self.files.push(p.as_path().to_path_buf());
         self
     }
@@ -162,8 +164,9 @@ impl Config {
                                       .args(&objects)
                                       .args(&self.objects),
             &ar(&target));
-        println!("cargo:rustc-flags=-L native={} -l static={}",
-                 dst.display(), output.slice(3, output.len() - 2));
+        println!("cargo:rustc-link-search=native={}", dst.display());
+        println!("cargo:rustc-link-lib=static={}",
+                 &output[3..output.len() - 2]);
     }
 
     fn gcc(&self) -> Command {
@@ -219,7 +222,7 @@ fn run(cmd: &mut Command, program: &str) {
     println!("running: {:?}", cmd);
     let status = match cmd.status() {
         Ok(status) => status,
-        Err(ref e) if e.kind() == io::ErrorKind::FileNotFound => {
+        Err(ref e) if e.kind() == io::ErrorKind::NotFound => {
             fail(&format!("failed to execute command: {}\nis `{}` not installed?",
                           e, program));
         }
@@ -247,7 +250,7 @@ fn get_var(var_base: &str) -> Result<String, String> {
 }
 
 fn gcc(target: &str) -> String {
-    let is_android = target.find_str("android").is_some();
+    let is_android = target.find("android").is_some();
 
     get_var("CC").unwrap_or(if cfg!(windows) {
         "gcc".to_string()
@@ -259,7 +262,7 @@ fn gcc(target: &str) -> String {
 }
 
 fn ar(target: &str) -> String {
-    let is_android = target.find_str("android").is_some();
+    let is_android = target.find("android").is_some();
 
     get_var("AR").unwrap_or(if is_android {
         format!("{}-ar", target)
@@ -324,8 +327,6 @@ fn ios_flags(target: &str) -> Vec<String> {
 }
 
 fn fail(s: &str) -> ! {
-    println!("{}", s);
-    env::set_exit_status(1);
-    std::old_io::stdio::set_stderr(Box::new(std::old_io::util::NullWriter));
+    println!("\n\n{}\n\n", s);
     panic!()
 }
