@@ -172,6 +172,7 @@ impl Config {
     fn gcc(&self) -> Command {
         let target = getenv_unwrap("TARGET");
         let opt_level = getenv_unwrap("OPT_LEVEL");
+        let debug = getenv_unwrap("DEBUG");
         let profile = getenv_unwrap("PROFILE");
         println!("{} {}", profile, opt_level);
 
@@ -180,6 +181,10 @@ impl Config {
         cmd.arg("-c");
         // cmd.arg("-ffunction-sections").arg("-fdata-sections");
         cmd.args(&cflags());
+
+        if debug == "true" {
+            cmd.arg("-g");
+        }
 
         if target.contains("-ios") {
             cmd.args(&ios_flags(&target));
